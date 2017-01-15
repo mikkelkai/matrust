@@ -1,6 +1,10 @@
 [package]
 name = "matrust"
-version = "0.1.0"
+version = "0.0.1"
+description="A simple and small matrix lib"
+keywords=["matrix"]
+license="MIT"
+repository="https://github.com/mikkelkai/matrust"
 authors = ["mikkelkai <mikkelkai@gmail.com>"]
 
 [dependencies]

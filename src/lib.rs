@@ -68,8 +68,39 @@ impl Matrix {
         Matrix::with_val(self.cols, self.rows, val)
     }
 
-    pub fn index(&self, m: usize, n: usize) -> f64{
-        self.val[m * self.cols + n]
+    pub fn index(&self, m: usize, n: usize) -> Result<f64, &str> {
+        if m > self.rows || n > self.cols {
+            return Err("Index out of range")
+        }
+        Ok(self.val[m * self.cols + n].clone())
+    }
+
+    pub fn dimensions(&self) -> (usize, usize) {
+        (self.rows, self.cols)
+    }
+
+    pub fn mult_apply_fn<F>(&self, other: &Matrix, f: F) -> Result<Matrix, &str> 
+    where F: Fn(f64, f64) -> f64{
+        if self.dimensions() != other.dimensions() {
+            return Err("Matricies must be same size")
+        }
+        Ok(Matrix::with_val(self.rows, self.cols, (0..self.val.len()).map(|i| f(self.val[i].clone(), other.val[i].clone())).collect()))
+    }
+
+    pub fn add(&self, other: &Matrix) -> Result<Matrix, &str> {
+        self.mult_apply_fn(other, (|x, y| x + y))
+    }
+
+    pub fn subtract(&self, other: &Matrix) -> Result<Matrix, &str> {
+        self.mult_apply_fn(other, (|x, y| x - y))
+    }
+
+    pub fn push(&mut self, m: usize, n: usize, val: f64) -> Result<(), &str> {
+        if m > self.rows || n > self.cols {
+            return Err("Index out of range")
+        }
+        self.val[m*self.cols+n] = val;
+        Ok(())
     }
 }
 
@@ -134,8 +165,39 @@ fn test_transpose() {
 #[test]
 fn test_index() {
     let m = Matrix::with_val(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
-    assert_eq!(m.index(0, 0), 1.0);
-    assert_eq!(m.index(0, 1), 2.0);
-    assert_eq!(m.index(1, 0), 3.0);
-    assert_eq!(m.index(1, 1), 4.0);
+    assert_eq!(m.index(0, 0), Ok(1.0));
+    assert_eq!(m.index(0, 1), Ok(2.0));
+    assert_eq!(m.index(1, 0), Ok(3.0));
+    assert_eq!(m.index(1, 1), Ok(4.0));
+}
+
+#[test]
+fn test_dimensions() {
+    assert_eq!(Matrix::new(1, 1, 1.0).dimensions(), (1, 1));
+    assert_eq!(Matrix::new(1, 2, 1.0).dimensions(), (1, 2));
+    assert_eq!(Matrix::new(2, 1, 1.0).dimensions(), (2, 1));
+    assert_eq!(Matrix::new(2, 2, 1.0).dimensions(), (2, 2));
+}
+
+#[test]
+fn test_add() {
+    let m1 = Matrix::with_val(2, 3, vec![2.0, 4.0, 5.0, 1.0, 2.0, 3.0]);
+    let m2 = Matrix::with_val(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    assert_eq!(m1.add(&m2), Ok(Matrix::with_val(2, 3, vec![3.0, 6.0, 8.0, 5.0, 7.0, 9.0])));
+}
+
+#[test]
+fn test_subtraction() {
+    let m1 = Matrix::with_val(2, 3, vec![2.0, 4.0, 5.0, 1.0, 2.0, 3.0]);
+    let m2 = Matrix::with_val(2, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    assert_eq!(m1.subtract(&m2), Ok(Matrix::with_val(2, 3, vec![1.0, 2.0, 2.0, -3.0, -3.0, -3.0])));
+}
+
+#[test]
+fn test_push() {
+    let mut m = Matrix::new(3,3, 1.0);
+    m.push(0, 2, 2.0);
+    assert_eq!(m.index(0, 2), Ok(2.0));
+    m.push(2, 2, 2.0);
+    assert_eq!(m.index(2, 2), Ok(2.0));
 }

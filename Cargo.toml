@@ -1,6 +1,6 @@
 [package]
 name = "matrust"
-version = "0.0.2"
+version = "0.0.3"
 description="A simple and small f64 matrix lib"
 keywords=["matrix"]
 license="MIT"

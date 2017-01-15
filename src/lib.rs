@@ -3,7 +3,7 @@ extern crate rand;
 use rand::Rng;
 
 #[derive(Debug)]
-struct Matrix {
+pub struct Matrix {
     rows: usize,
     cols: usize,
     val: Vec<f64>,

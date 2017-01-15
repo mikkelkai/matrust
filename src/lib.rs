@@ -44,7 +44,7 @@ impl Matrix {
         self.apply_fn((|x| x * scalar))
     }
 
-    pub fn mult_vec(&self, v: Vec<f64>) -> Result<Vec<f64>, &str> {
+    pub fn mult_vec(&self, v: &Vec<f64>) -> Result<Vec<f64>, &str> {
         if v.len() != self.cols {
             return Err("Vector length must equal matrix column length")
         }
@@ -55,6 +55,21 @@ impl Matrix {
                     .sum()
             })
             .collect())
+    }
+
+    pub fn transpose(&self) -> Matrix {
+        let mut val = Vec::with_capacity(self.rows * self.cols);
+        for i in 0..self.cols {
+            for j in 0..self.rows {
+                val.push(self.val[j * self.cols + i].clone())
+            }
+        }
+
+        Matrix::with_val(self.cols, self.rows, val)
+    }
+
+    pub fn index(&self, m: usize, n: usize) -> f64{
+        self.val[m * self.cols + n]
     }
 }
 
@@ -102,6 +117,25 @@ fn test_scale() {
 #[test]
 fn test_mult_vec() {
     let m = Matrix::with_val(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
-    let v = m.mult_vec(vec![2.0, 1.0]);
+    let v = m.mult_vec(&vec![2.0, 1.0]);
     assert_eq!(v, Ok(vec![4.0, 10.0]));
+}
+
+#[test]
+fn test_transpose() {
+    let m = Matrix::with_val(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+    assert_eq!(m.transpose(), Matrix::with_val(2, 2, vec![1.0, 3.0, 2.0, 4.0]));
+    let m = Matrix::with_val(3, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+    assert_eq!(m.transpose(), Matrix::with_val(3, 3, vec![1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0]));
+    let m = Matrix::with_val(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    assert_eq!(m.transpose(), Matrix::with_val(2, 3, vec![1.0, 3.0, 5.0, 2.0, 4.0, 6.0]));
+}
+
+#[test]
+fn test_index() {
+    let m = Matrix::with_val(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
+    assert_eq!(m.index(0, 0), 1.0);
+    assert_eq!(m.index(0, 1), 2.0);
+    assert_eq!(m.index(1, 0), 3.0);
+    assert_eq!(m.index(1, 1), 4.0);
 }

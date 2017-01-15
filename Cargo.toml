@@ -1,7 +1,7 @@
 [package]
 name = "matrust"
 version = "0.0.1"
-description="A simple and small matrix lib"
+description="A simple and small f64 matrix lib"
 keywords=["matrix"]
 license="MIT"
 repository="https://github.com/mikkelkai/matrust"

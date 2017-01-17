@@ -1,16 +1,37 @@
 extern crate rand;
+extern crate num;
 
 use rand::Rng;
+use std::fmt;
+use num::Num;
 
 #[derive(Debug)]
-pub struct Matrix {
+pub struct Matrix<T> {
     rows: usize,
     cols: usize,
-    val: Vec<f64>,
+    val: Vec<T>,
 }
 
-impl Matrix {
-    pub fn new(m: usize, n: usize, value: f64) -> Matrix {
+impl<T: Clone + Num + fmt::Display> fmt::Display for Matrix<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "["));
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                try!(write!(f, "{}", self.val[i * self.cols + j]));
+                if j < self.cols - 1 {
+                    try!(write!(f, ", "));
+                }
+            }
+            if i < self.rows - 1 {
+                try!(write!(f, "; "));
+            }
+        }
+        write!(f, "]")
+    }
+}
+
+impl<T: Clone + Num + std::iter::Sum> Matrix<T> {
+    pub fn new(m: usize, n: usize, value: T) -> Matrix<T> {
         Matrix {
             rows: m,
             cols: n,
@@ -18,7 +39,7 @@ impl Matrix {
         }
     }
 
-    fn with_val(m: usize, n: usize, val: Vec<f64>) -> Matrix{
+    fn with_val(m: usize, n: usize, val: Vec<T>) -> Matrix<T>{
         Matrix {
             rows: m,
             cols: n,
@@ -26,13 +47,8 @@ impl Matrix {
         }
     }
 
-    pub fn rand(m: usize, n: usize) -> Matrix {
-        let mut rng = rand::thread_rng();
-        Matrix::with_val(m, n, (0..m * n).map(|_| rng.gen()).collect())
-    }
-
-    pub fn apply_fn<F>(&self, f: F) -> Matrix
-        where F: Fn(f64) -> f64 {
+    pub fn apply_fn<F>(&self, f: F) -> Matrix<T>
+        where F: Fn(T) -> T {
         Matrix {
             rows: self.rows,
             cols: self.cols,
@@ -40,11 +56,11 @@ impl Matrix {
         }
     }
 
-    pub fn scale(&self, scalar: f64) -> Matrix {
-        self.apply_fn((|x| x * scalar))
+    pub fn scale(&self, scalar: T) -> Matrix<T> {
+        self.apply_fn((|x| x * scalar.clone()))
     }
 
-    pub fn mult_vec(&self, v: &Vec<f64>) -> Result<Vec<f64>, &str> {
+    pub fn mult_vec(&self, v: &Vec<T>) -> Result<Vec<T>, &str> {
         if v.len() != self.cols {
             return Err("Vector length must equal matrix column length")
         }
@@ -57,7 +73,7 @@ impl Matrix {
             .collect())
     }
 
-    pub fn transpose(&self) -> Matrix {
+    pub fn transpose(&self) -> Matrix<T> {
         let mut val = Vec::with_capacity(self.rows * self.cols);
         for i in 0..self.cols {
             for j in 0..self.rows {
@@ -68,7 +84,7 @@ impl Matrix {
         Matrix::with_val(self.cols, self.rows, val)
     }
 
-    pub fn index(&self, m: usize, n: usize) -> Result<f64, &str> {
+    pub fn index(&self, m: usize, n: usize) -> Result<T, &str> {
         if m > self.rows || n > self.cols {
             return Err("Index out of range")
         }
@@ -79,23 +95,23 @@ impl Matrix {
         (self.rows, self.cols)
     }
 
-    pub fn mult_apply_fn<F>(&self, other: &Matrix, f: F) -> Result<Matrix, &str> 
-    where F: Fn(f64, f64) -> f64{
+    pub fn mult_apply_fn<F>(&self, other: &Matrix<T>, f: F) -> Result<Matrix<T>, &str> 
+    where F: Fn(T, T) -> T{
         if self.dimensions() != other.dimensions() {
             return Err("Matricies must be same size")
         }
         Ok(Matrix::with_val(self.rows, self.cols, (0..self.val.len()).map(|i| f(self.val[i].clone(), other.val[i].clone())).collect()))
     }
 
-    pub fn add(&self, other: &Matrix) -> Result<Matrix, &str> {
+    pub fn add(&self, other: &Matrix<T>) -> Result<Matrix<T>, &str> {
         self.mult_apply_fn(other, (|x, y| x + y))
     }
 
-    pub fn subtract(&self, other: &Matrix) -> Result<Matrix, &str> {
+    pub fn subtract(&self, other: &Matrix<T>) -> Result<Matrix<T>, &str> {
         self.mult_apply_fn(other, (|x, y| x - y))
     }
 
-    pub fn push(&mut self, m: usize, n: usize, val: f64) -> Result<(), &str> {
+    pub fn push(&mut self, m: usize, n: usize, val: T) -> Result<(), &str> {
         if m > self.rows || n > self.cols {
             return Err("Index out of range")
         }
@@ -104,8 +120,15 @@ impl Matrix {
     }
 }
 
-impl PartialEq for Matrix {
-    fn eq (&self, other: &Matrix) -> bool {
+impl<T: Clone + Num + std::iter::Sum + rand::Rand> Matrix<T> {
+    pub fn rand(m: usize, n: usize) -> Matrix<T> {
+        let mut rng = rand::thread_rng();
+        Matrix::with_val(m, n, (0..m * n).map(|_| rng.gen()).collect())
+    }
+}
+
+impl<T: Clone + Num> PartialEq for Matrix<T> {
+    fn eq (&self, other: &Matrix<T>) -> bool {
         self.rows == other.rows && self.cols == other.cols && self.val == other.val
     }
 }
@@ -200,4 +223,10 @@ fn test_push() {
     assert_eq!(m.index(0, 2), Ok(2.0));
     m.push(2, 2, 2.0);
     assert_eq!(m.index(2, 2), Ok(2.0));
+}
+
+#[test]
+fn test_display() {
+    let m: Matrix<f64> = Matrix::rand(2, 3);
+    println!("{}", m);
 }

@@ -1,6 +1,6 @@
 [package]
 name = "matrust"
-version = "0.0.5"
+version = "0.0.6"
 description="A simple and small generic matrix lib"
 keywords=["matrix", "linear", "algebra"]
 license="MIT"
@@ -8,5 +8,4 @@ repository="https://github.com/mikkelkai/matrust"
 authors = ["mikkelkai <mikkelkai@gmail.com>"]
 
 [dependencies]
-    rand = "0.3"
     num = "0.1.36"
